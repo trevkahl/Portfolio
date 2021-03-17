@@ -1,0 +1,384 @@
+---
+title: "IST_707_Project"
+author: "Trevor Kahl"
+date: "5/4/2020"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## load the libraries
+
+```{r}
+library(readxl)
+library(arules)
+library(arulesViz)
+library(datasets)
+library(randomForest)
+```
+## load the data
+
+
+```{r cars}
+asylumTrends1 <-read_excel("C:/Users/trev9/OneDrive - Syracuse University/IST 707/IST_707_Project/2014AsylumTrends/2014_Asylum_Trends_annex_tables_v3_with_Freedom.xls", sheet = 2, col_names = FALSE, col_types = NULL)
+asylumTrends2 <- read_excel("C:/Users/trev9/OneDrive - Syracuse University/IST 707/IST_707_Project/2014AsylumTrends/2014_Asylum_Trends_annex_tables_v3_with_Freedom.xls", sheet = 3, col_names = FALSE, col_types = NULL)
+asylumTrends3 <- read_excel("C:/Users/trev9/OneDrive - Syracuse University/IST 707/IST_707_Project/2014AsylumTrends/2014_Asylum_Trends_annex_tables_v3_with_Freedom.xls", sheet = 4, col_names = FALSE, col_types = NULL)
+
+# (JEAN) adding my own desktop to load from too
+asylumTrends1 <- read_excel("/Users/jeanthompson/Desktop/Syracuse/IST\ 707/Project/2014_Asylum_Trends_annex_tables_v3_with_Freedom.xls", sheet = 2, col_names=FALSE,col_types = NULL)
+asylumTrends2 <-read_excel("/Users/jeanthompson/Desktop/Syracuse/IST\ 707/Project/2014_Asylum_Trends_annex_tables_v3_with_Freedom.xls",sheet = 3, col_names = FALSE, col_types = NULL)
+asylumTrends3 <- read_excel("/Users/jeanthompson/Desktop/Syracuse/IST\ 707/Project/2014_Asylum_Trends_annex_tables_v3_with_Freedom.xls", sheet = 4, col_names = FALSE, col_types = NULL)
+
+View(asylumTrends3)
+str(asylumTrends1)
+str(asylumTrends2)
+str(asylumTrends3)
+```
+
+## cleaning rows and columns for asylumTrends1
+
+
+```{r}
+#removoing irrelevant rows in begginning and end
+asylumTrends1 <- asylumTrends1[-1:-6,] #take first rows so we can add headers below
+asylumTrends1 <- asylumTrends1 [-51:-91,] #take out rows with na in new added cols
+#add col names to make data readable as it was in the file
+colnames(asylumTrends1) <- c("Country", "2010", "2011", "2012", "2013", "2014", "Total", "AnnualChange14-13", "Share2014", "Share10-14", "Rank2014", "Rank10-14", "1000inhabitantsTotal2014" ,"1000inhabitantsTotal10-14", "1000inhabitantsRank2014", "1000inhabitantsRank10-14", "1GDPperCapitaTotal2014", "1GDPperCapitaTotal10-14", "1GDPperCapitaRank2014", "1GDPperCapitaRank10-14", "Region", "Free", "Political Rights", "Civil Liberties", "Electoral","PolPluralism", "Governance","PolRights", "Expression", "Organization","Rule of Law", "IndRights", "Liberties Score" )
+str(asylumTrends1)
+#make all cols num except free and politcal rights
+asylumTrends1[,2:20]<- lapply(asylumTrends1[,2:20], FUN = as.numeric)
+asylumTrends1[,24:33]<- lapply(asylumTrends1[,24:33], FUN = as.numeric)
+#make factors for free and political rights
+asylumTrends1$Country<- as.factor(asylumTrends1$Country)
+asylumTrends1$Region<- as.factor(asylumTrends1$Region)
+asylumTrends1$Free<- as.factor(asylumTrends1$Free)
+asylumTrends1$`Political Rights` <- as.factor(asylumTrends1$`Political Rights`)
+asylumTrends1$`Civil Liberties` <- as.factor(asylumTrends1$`Civil Liberties`)
+str(asylumTrends1)
+View(asylumTrends1)
+#make df removing totals in the rows
+asylumTrends1NoTotals <- asylumTrends1[-42:-50,] # remove Totals
+asylumTrends1NoTotals <- asylumTrends1NoTotals[-22,] #remove Lie
+View(asylumTrends1NoTotals)
+
+#asylumTrends1NoTotals <- asylumTrends1NoTotals[-36,] # remove 'of Kosovo' breakdown
+str(asylumTrends1NoTotals)
+# Make new df so have cleaned with int and not cuts
+asylumTrends1Cuts <- asylumTrends1NoTotals
+asylumTrends1Cuts$`2010` <- cut(asylumTrends1NoTotals$`2010`, breaks = c(0,15000,30000,45000,60000,75000,90000,Inf),labels = c("small", "small-high", "mid-low", "mid" ,"mid-high", "high", "highest"))
+asylumTrends1Cuts$`2011` <- cut(asylumTrends1NoTotals$`2011`, breaks = c(0,15000,30000,45000,60000,75000,90000,Inf),labels = c("small", "small-high", "mid-low", "mid" ,"mid-high", "high", "highest"))
+asylumTrends1Cuts$`2012` <- cut(asylumTrends1NoTotals$`2012`, breaks = c(0,15000,30000,45000,60000,75000,90000,Inf),labels = c("small", "small-high", "mid-low", "mid" ,"mid-high", "high", "highest"))
+asylumTrends1Cuts$`2013` <- cut(asylumTrends1NoTotals$`2013`, breaks = c(0,15000,30000,45000,60000,75000,90000,Inf),labels = c("small", "small-high", "mid-low", "mid" ,"mid-high", "high", "highest"))
+asylumTrends1Cuts$`2014` <- cut(asylumTrends1NoTotals$`2014`, breaks = c(0,15000,30000,45000,60000,75000,90000,Inf),labels = c("small", "small-high", "mid-low", "mid" ,"mid-high", "high", "highest"))
+asylumTrends1Cuts$Electoral < cut(asylumTrends1NoTotals$Electoral, breaks = c(5,9,12,Inf), labels = c("low", "mid", "high"))# 3 cuts
+asylumTrends1Cuts$PolPluralism <- cut(asylumTrends1NoTotals$PolPluralism, breaks = c(8,11,14,Inf), labels = c("low", "mid", "high"))#3 cuts
+asylumTrends1Cuts$Governance <- cut(asylumTrends1NoTotals$Governance, breaks = c(3,5,8,10,Inf), labels = c("low","mid-low", "mid-high", "high")) #4 cuts
+asylumTrends1Cuts$PolRights <- cut(asylumTrends1NoTotals$PolRights, breaks = c(16,22,33,37,Inf), labels = c("low","mid-low", "mid-high", "high")) #4 cuts
+asylumTrends1Cuts$Expression <- cut(asylumTrends1NoTotals$Expression, breaks = c(5,10,14,Inf), labels = c("low", "mid", "high")) #3 cuts
+asylumTrends1Cuts$Organization <- cut(asylumTrends1NoTotals$Organization, breaks = c(3,7,10,Inf), labels = c("low", "mid", "high")) #3 cuts
+asylumTrends1Cuts$`Rule of Law` <- cut(asylumTrends1NoTotals$`Rule of Law`, breaks = c(3,9,12,14,Inf), labels = c("low","mid-low", "mid-high", "high")) #4 cuts
+asylumTrends1Cuts$IndRights <- cut(asylumTrends1NoTotals$IndRights, breaks = c(5,9,12,14,Inf), labels = c("low","mid-low", "mid-high", "high")) #4 cuts
+asylumTrends1Cuts$`Liberties Score` <- cut(asylumTrends1NoTotals$`Liberties Score`, breaks = c(16,34,49,Inf), labels = c("NF","PF","F")) # 3 cuts
+
+str(asylumTrends1Cuts)
+str(asylumTrends1)
+View(asylumTrends1NoTotals)
+View(asylumTrends1)
+View(asylumTrends1Cuts)
+```
+
+## cleaning rows and columns for asylumTrends2
+
+```{r}
+asylumTrends2 <- asylumTrends2[-1:-6,]
+asylumTrends2 <- asylumTrends2[-8:-16,] #take out total and rest of cols
+View(asylumTrends2)
+str(asylumTrends2)
+colnames(asylumTrends2) <- c("Country", "2010", "2011", "2012", "2013", "2014", "Total", "AnnualChange14-13", "Share2014", "Share10-14","Rank2002","Rank2003","Rank2004","Rank2005", "Rank2014", "Rank10-14", "1000inhabitantsTotal2014" ,"1000inhabitantsTotal10-14", "1000inhabitantsRank2014", "1000inhabitantsRank10-14", "1GDPperCapitaTotal2014", "1GDPperCapitaTotal10-14", "1GDPperCapitaRank2014", "1GDPperCapitaRank10-14","Region", "Free", "Political Rights", "Civil Liberties", "Electoral","PolPluralism", "Governance","PolRights", "Expression", "Organization","Rule of Law", "IndRights", "Liberties Score")
+asylumTrends2[,6:24] <- lapply(asylumTrends2[,6:24], FUN = as.numeric)
+asylumTrends2[,27:37] <- lapply(asylumTrends2[,27:37], FUN = as.numeric)
+View(asylumTrends2)
+asylumTrends2$Country <- as.factor(asylumTrends2$Country)
+asylumTrends2$Region <- as.factor(asylumTrends2$Region)
+asylumTrends2$Free <- as.factor(asylumTrends2$Free)
+asylumTrends2$`Political Rights` <- as.factor(asylumTrends2$`Political Rights`)
+asylumTrends2$`Civil Liberties` <- as.factor(asylumTrends2$`Civil Liberties`)
+
+asylumTrends2Cuts <- asylumTrends2
+asylumTrends2Cuts$`2010` <- cut(asylumTrends2$`2010`, breaks = c(0,500,1000,1500,2000,2500,3000,Inf),labels = c("small", "small-high", "mid-low", "mid" ,"mid-high", "high", "highest"))
+asylumTrends2Cuts$`2011` <- cut(asylumTrends2$`2011`, breaks = c(0,500,1000,1500,2000,2500,3000,Inf),labels = c("small", "small-high", "mid-low", "mid" ,"mid-high", "high", "highest"))
+asylumTrends2Cuts$`2012` <- cut(asylumTrends2$`2012`, breaks = c(0,500,1000,1500,2000,2500,3000,Inf),labels = c("small", "small-high", "mid-low", "mid" ,"mid-high", "high", "highest"))
+asylumTrends2Cuts$`2013` <- cut(asylumTrends2$`2013`, breaks = c(0,500,1000,1500,2000,2500,3000,Inf),labels = c("small", "small-high", "mid-low", "mid" ,"mid-high", "high", "highest"))
+asylumTrends2Cuts$`2014` <- cut(asylumTrends2$`2014`, breaks = c(0,500,1000,1500,2000,2500,3000,Inf),labels = c("small", "small-high", "mid-low", "mid" ,"mid-high", "high", "highest"))
+asylumTrends2Cuts$Electoral < cut(asylumTrends2$Electoral, breaks = c(-1,3,8,Inf), labels = c("low", "mid", "high"))# 3 cuts
+asylumTrends2Cuts$PolPluralism <- cut(asylumTrends2$PolPluralism, breaks = c(1,8,14,Inf), labels = c("low", "mid", "high"))#3 cuts
+asylumTrends2Cuts$Governance <- cut(asylumTrends2$Governance, breaks = c(-1,3,5,8,Inf), labels = c("low","mid-low", "mid-high", "high")) #4 cuts
+asylumTrends2Cuts$PolRights <- cut(asylumTrends2$PolRights, breaks = c(1,10,20,26,Inf), labels = c("low","mid-low", "mid-high", "high")) #4 cuts
+asylumTrends2Cuts$Expression <- cut(asylumTrends2$Expression, breaks = c(1,9,14,Inf), labels = c("low", "mid", "high")) #3 cuts
+asylumTrends2Cuts$Organization <- cut(asylumTrends2$Organization, breaks = c(0,7,10,Inf), labels = c("low", "mid", "high")) #3 cuts
+asylumTrends2Cuts$`Rule of Law` <- cut(asylumTrends2$`Rule of Law`, breaks = c(-1,9,12,14,Inf), labels = c("low","mid-low", "mid-high", "high")) #4 cuts
+asylumTrends2Cuts$IndRights <- cut(asylumTrends2$IndRights, breaks = c(-1,9,12,14,Inf), labels = c("low","mid-low", "mid-high", "high")) #4 cuts
+asylumTrends2Cuts$`Liberties Score` <- cut(asylumTrends2$`Liberties Score`, breaks = c(7,34,49,Inf), labels = c("NF","PF","F")) # 3 cuts
+View(asylumTrends2Cuts)
+str(asylumTrends2)
+View(asylumTrends2)
+```
+
+
+#clean aslyumTrends3
+
+```{r}
+asylumTrends3 <- asylumTrends3[-1:-5,] #take first rows so we can add headers below
+asylumTrends3 <- asylumTrends3 [-40:-43,] #take out end rows of other total and blanks
+View(asylumTrends3)
+asylumTrends3 <- asylumTrends3[-12,]#remove stateless
+asylumTrends3 <- asylumTrends3[-17,]#remove various/unknown
+asylumTrends3 <- asylumTrends3[-22,]#remove Congo
+colnames(asylumTrends3) <- c("Country","2013", "2014","Total","Share2013", "Share2014","AvgTotalShare","Rank2014", "Rank10-14", "AnnualChange","Region", "Free", "Political Rights", "Civil Liberties", "Electoral","PolPluralism", "Governance","PolRights", "Expression", "Organization","Rule of Law", "IndRights", "Liberties Score")
+
+asylumTrends3[,2:10] <- lapply(asylumTrends3[,2:10], FUN = as.numeric)
+asylumTrends3[,13:23] <- lapply(asylumTrends3[,13:23], FUN = as.numeric)
+
+asylumTrends3$Country <- as.factor(asylumTrends3$Country)
+asylumTrends3$Region <- as.factor(asylumTrends3$Region)
+asylumTrends3$Free <- as.factor(asylumTrends3$Free)
+asylumTrends3 <- asylumTrends3[-12,]
+asylumTrends3 <- asylumTrends3[-21,]
+asylumTrends3 <- asylumTrends3[-35,]
+asylumTrends3 <- asylumTrends3 [-16,]
+str(asylumTrends3)
+asylumTrends3Cuts <- asylumTrends3
+
+View(asylumTrends3)
+asylumTrends3Cuts$`2013` <- cut(asylumTrends3$`2013`, breaks = c(0,500,1000,1500,2000,2500,3000,Inf),labels = c("small", "small-high", "mid-low", "mid" ,"mid-high", "high", "highest"))
+asylumTrends3Cuts$`2014` <- cut(asylumTrends3$`2014`, breaks = c(0,500,1000,1500,2000,2500,3000,Inf),labels = c("small", "small-high", "mid-low", "mid" ,"mid-high", "high", "highest"))
+asylumTrends3Cuts$`Political Rights` < cut(asylumTrends3$`Political Rights`, breaks = c(1,4,9,Inf), labels = c("low", "mid", "high"))# 3 cuts
+asylumTrends3Cuts$`Civil Liberties` <- cut(asylumTrends3$`Civil Liberties`, breaks = c(1,4,9,Inf), labels = c("low", "mid", "high"))#3 cuts
+asylumTrends3Cuts$Electoral < cut(asylumTrends3$Electoral, breaks = c(-1,6,11,Inf), labels = c("low", "mid", "high"))# 3 cuts
+asylumTrends3Cuts$PolPluralism <- cut(asylumTrends3$PolPluralism, breaks = c(-1,6,11,Inf), labels = c("low", "mid", "high"))#3 cuts
+asylumTrends3Cuts$Governance <- cut(asylumTrends3$Governance, breaks = c(-1,3,6,10,Inf), labels = c("low","mid-low", "mid-high", "high")) #4 cuts
+asylumTrends3Cuts$PolRights <- cut(asylumTrends3$PolRights, breaks = c(-4,10,22,35,Inf), labels = c("low","mid-low", "mid-high", "high")) #4 cuts
+asylumTrends3Cuts$Expression <- cut(asylumTrends3$Expression, breaks = c(-1,6,11,Inf), labels = c("low", "mid", "high")) #3 cuts
+asylumTrends3Cuts$Organization <- cut(asylumTrends3$Organization, breaks = c(-1,5,10,Inf), labels = c("low", "mid", "high")) #3 cuts
+asylumTrends3Cuts$`Rule of Law` <- cut(asylumTrends3$`Rule of Law`, breaks = c(-1,3,8,12,Inf), labels = c("low","mid-low", "mid-high", "high")) #4 cuts
+asylumTrends3Cuts$IndRights <- cut(asylumTrends3$IndRights, breaks = c(-1,4,9,13,Inf), labels = c("low","mid-low", "mid-high", "high")) #4 cuts
+asylumTrends3Cuts$`Liberties Score` <- cut(asylumTrends3$`Liberties Score`, breaks = c(0,26,42,Inf), labels = c("NF","PF","F")) # 3 cuts
+
+View(asylumTrends3Cuts)
+str(asylumTrends3Cuts)
+
+```
+
+# summaries of frequency for table 1 (europe and selected non-europe)
+```{r}
+
+# count the appearances for size name by year
+asylumTrends1_sizes2010 <- as.data.frame(table(asylumTrends1Cuts$'2010'))
+asylumTrends1_sizes2011 <- as.data.frame(table(asylumTrends1Cuts$'2011'))
+asylumTrends1_sizes2012 <- as.data.frame(table(asylumTrends1Cuts$'2012'))
+asylumTrends1_sizes2013 <- as.data.frame(table(asylumTrends1Cuts$'2013'))
+asylumTrends1_sizes2014 <- as.data.frame(table(asylumTrends1Cuts$'2014'))
+
+asylumTrends1_sizes2010
+asylumTrends1_sizes2011
+asylumTrends1_sizes2012
+asylumTrends1_sizes2013
+asylumTrends1_sizes2014
+
+# creating a clean set with the raw numbers
+
+View(asylumTrends1)
+
+
+#histograms
+hist(asylumTrends1NoTotals$'2010', main="2010 Trends")
+hist(asylumTrends1NoTotals$'2011', main="2011 Trends")
+hist(asylumTrends1NoTotals$'2012', main="201 Trends")
+hist(asylumTrends1NoTotals$'2013', main="2013 Trends")
+hist(asylumTrends1NoTotals$'2014', main="2014 Trends")
+hist(asylumTrends1NoTotals$Total, main="Overall Trends")
+
+#df ordered by rank
+rank2014 <- asylumTrends1NoTotals[order(asylumTrends1NoTotals$Rank2014),]
+rankAll <- asylumTrends1NoTotals[order(asylumTrends1NoTotals$'Rank10-14'),]
+rank2014 <- data.frame(rank2014)
+rankAll <- data.frame(rankAll)
+colnames(rank2014) <- c("Country", "2010", "2011", "2012", "2013", "2014", "Total", "AnnualChange 14-13", "Share2014", "Share10-14", "Rank2014", "Rank10-14", "1000inhabitantsTotal2014" ,"1000inhabitantsTotal10-14", "1000inhabitantsRank2014", "1000inhabitantsRank10-14", "1GDPperCapitaTotal2014", "1GDPperCapitaTotal10-14", "1GDPperCapitaRank2014", "1GDPperCapitaRank10-14")
+colnames(rankAll) <- c("Country", "2010", "2011", "2012", "2013", "2014", "Total", "AnnualChange 14-13", "Share2014", "Share10-14", "Rank2014", "Rank10-14", "1000inhabitantsTotal2014" ,"1000inhabitantsTotal10-14", "1000inhabitantsRank2014", "1000inhabitantsRank10-14", "1GDPperCapitaTotal2014", "1GDPperCapitaTotal10-14", "1GDPperCapitaRank2014", "1GDPperCapitaRank10-14")
+
+
+############# this is giving me errors? ###########
+#bar plots for top 10 by rank
+rank2014 <- asylumTrends1NoTotals[order(asylumTrends1NoTotals$Rank2014),]
+toprank2014 <- rank2014[-(11:44),]
+ggplot(data=toprank2014, aes(x=Country, y=Rank2014) + geom_bar())
+
+```
+
+
+## arm for 1
+
+
+```{r}
+#make df taking out num cols to run arm
+asylumTrends1CutsRules <- asylumTrends1Cuts
+asylumTrends1CutsRules <- asylumTrends1CutsRules[,-7:-20]
+asylumTrends1CutsRules <- asylumTrends1CutsRules[,-11]
+
+#itemFrequencyPlot(asylumTrends1CutsRules,topN=20,type="absolute")
+#itemFrequencyPlot(asylumTrends2,topN=20,type="absolute")
+
+#rules run for asylumTrends1
+rulesAsylumTrends1 <- apriori(asylumTrends1CutsRules, parameter = list(supp = 0.2, conf = .8,minlen=3))
+rulesAsylumTrends1<-sort(rulesAsylumTrends1, decreasing=FALSE,by="confidence")
+options(digits = 2)
+inspect(rulesAsylumTrends1[1:30])
+
+rulesAsylumTrends1 <- apriori(asylumTrends1CutsRules, parameter = list(supp = 0.2, conf = .85,minlen=3))
+rulesAsylumTrends1<-sort(rulesAsylumTrends1, decreasing=FALSE,by="confidence")
+options(digits = 2)
+inspect(rulesAsylumTrends1[1:30])
+
+rulesAsylumTrends1_2 <- apriori(asylumTrends1CutsRules, parameter = list(supp = 0.2, conf = .85,minlen=3))
+rulesAsylumTrends1_2<-sort(rulesAsylumTrends1_2, decreasing=TRUE,by="confidence")
+options(digits = 2)
+inspect(rulesAsylumTrends1_2[1:5])
+
+rulesAsylumTrends1_3 <- apriori(asylumTrends1CutsRules, parameter = list(supp = 0.2, conf = .85,minlen=3))
+rulesAsylumTrends1_3<-sort(rulesAsylumTrends1_3, decreasing=TRUE,by="support")
+options(digits = 2)
+inspect(rulesAsylumTrends1_3[1:5])
+
+rulesAsylumTrends1_4 <- apriori(asylumTrends1CutsRules, parameter = list(supp = 0.2, conf = .85,minlen=3))
+rulesAsylumTrends1_4<-sort(rulesAsylumTrends1_4, decreasing=TRUE,by="lift")
+options(digits = 2)
+inspect(rulesAsylumTrends1_4[1:5])
+
+#run rules with rhs as year and type
+rules2010<-apriori(data=asylumTrends1CutsRules, parameter=list(supp=0.001,conf = 0.08,minlen=2),
+               appearance = list(default="lhs",rhs="2010=small"),
+               control = list(verbose=F))
+rules2010<-sort(rules2010, decreasing=TRUE,by="confidence")
+inspect(rules2010[1:10])
+
+rulesFree<-apriori(data=asylumTrends1CutsRules, parameter=list(supp=0.001,conf = 0.08,minlen=2), 
+               appearance = list(default="rhs",lhs="Free=F"),
+               control = list(verbose=F))
+rulesFree<-sort(rulesFree, decreasing=TRUE,by="confidence")
+inspect(rulesFree[1:2])
+```
+
+##arm for 2
+
+```{r}
+#make df taking out num cols to run arm
+str(asylumTrends2CutsRules)
+asylumTrends2CutsRules <- asylumTrends2Cuts
+asylumTrends2CutsRules <- asylumTrends2CutsRules[,-7:-24]
+asylumTrends2CutsRules <- asylumTrends2CutsRules[,-11]
+
+#itemFrequencyPlot(asylumTrends1CutsRules,topN=20,type="absolute")
+#itemFrequencyPlot(asylumTrends2,topN=20,type="absolute")
+
+#rules run for asylumTrends1
+rulesAsylumTrends2 <- apriori(asylumTrends2CutsRules, parameter = list(supp = 0.2, conf = .8,minlen=3))
+rulesAsylumTrends2<-sort(rulesAsylumTrends2, decreasing=FALSE,by="confidence")
+options(digits = 2)
+inspect(rulesAsylumTrends2[1:30])
+
+#run rules with rhs as year and type
+asylum2rules2010<-apriori(data=asylumTrends2CutsRules, parameter=list(supp=0.001,conf = 0.08,minlen=2),
+               appearance = list(default="lhs",rhs="2010=small"),
+               control = list(verbose=F))
+asylum2rules2010<-sort(asylum2rules2010, decreasing=TRUE,by="confidence")
+inspect(asylum2rules2010[1:10])
+```
+#arm for 3
+
+```{r}
+View(asylumTrends3CutsRules)
+str(asylumTrends3CutsRules)
+asylumTrends3CutsRules <- asylumTrends3Cuts
+asylumTrends3CutsRules <- asylumTrends3CutsRules[,-4:-10]
+asylumTrends3CutsRules <- asylumTrends3CutsRules[,-6]
+asylumTrends3CutsRules <- asylumTrends3CutsRules[,-7]
+
+#itemFrequencyPlot(asylumTrends1CutsRules,topN=20,type="absolute")
+#itemFrequencyPlot(asylumTrends2,topN=20,type="absolute")
+
+#rules run for asylumTrends1
+rulesAsylumTrends3 <- apriori(asylumTrends3CutsRules, parameter = list(supp = 0.2, conf = .8,minlen=3))
+rulesAsylumTrends3<-sort(rulesAsylumTrends3, decreasing=FALSE,by="confidence")
+options(digits = 2)
+inspect(rulesAsylumTrends3[1:30])
+
+rulesAsylumTrends3 <- apriori(asylumTrends3CutsRules, parameter = list(supp = 0.2, conf = .85,minlen=3))
+rulesAsylumTrends3<-sort(rulesAsylumTrends3, decreasing=FALSE,by="confidence")
+options(digits = 2)
+inspect(rulesAsylumTrends3[1:30])
+
+rulesAsylumTrends3 <- apriori(asylumTrends3CutsRules, parameter = list(supp = 0.2, conf = .9,minlen=3))
+rulesAsylumTrends3<-sort(rulesAsylumTrends3, decreasing=FALSE,by="confidence")
+options(digits = 2)
+inspect(rulesAsylumTrends3[1:30])
+
+rulesAsylumTrends3_1 <- apriori(asylumTrends3CutsRules, parameter = list(supp = 0.2, conf = .9,minlen=3))
+rulesAsylumTrends3_1<-sort(rulesAsylumTrends3_1, decreasing=TRUE,by="confidence")
+options(digits = 2)
+inspect(rulesAsylumTrends3_1[1:5])
+
+rulesAsylumTrends3_2 <- apriori(asylumTrends3CutsRules, parameter = list(supp = 0.2, conf = .9,minlen=3))
+rulesAsylumTrends3_2<-sort(rulesAsylumTrends3_2, decreasing=TRUE,by="support")
+options(digits = 2)
+inspect(rulesAsylumTrends3_2[1:5])
+
+rulesAsylumTrends3_3 <- apriori(asylumTrends3CutsRules, parameter = list(supp = 0.2, conf = .9,minlen=3))
+rulesAsylumTrends3_3<-sort(rulesAsylumTrends3_3, decreasing=TRUE,by="lift")
+options(digits = 2)
+inspect(rulesAsylumTrends3_3[1:5])
+
+asylum3rulesNF<-apriori(data=asylumTrends3CutsRules, parameter=list(supp=0.001,conf = 0.08,minlen=2),
+               appearance = list(default="rhs",lhs="Free=NF"),
+               control = list(verbose=F))
+asylum3rulesNF<-sort(asylum3rulesNF, decreasing=TRUE,by="confidence")
+inspect(asylum3rulesNF[1:2])
+```
+
+
+##random forest models 1
+```{r}
+asylumTrends1RF <- data.frame(asylumTrends1NoTotals)
+asylumTrends1RF <- asylumTrends1RF[,-8:-12]
+asylumTrends1RF <- asylumTrends1RF[,-18:-28]
+asylumTrends1RF <- asylumTrends1RF[,-1]
+asylumTrends1RF <- asylumTrends1RF[,-15]
+asylumTrends1RF
+str(asylumTrends1RF)
+ATRF1 <- randomForest(asylumTrends1RF[,-15], asylumTrends1RF[,15], prox=TRUE)
+ATRF1
+importance(ATRF1)
+View(asylumTrends1RF)
+```
+
+##random forest models 3
+
+```{r}
+View(asylumTrends3RF)
+asylumTrends3
+asylumTrends3RF <- data.frame(asylumTrends3)
+asylumTrends3RF <- asylumTrends3RF[,-5:-10]
+asylumTrends3RF <- asylumTrends3RF[,-1]
+asylumTrends3RF
+str(asylumTrends3RF)
+ATRF3 <- randomForest(asylumTrends3RF[,-5], asylumTrends3RF[,5], prox=TRUE)
+importance(ATRF3)
+ATRF3
+asylumTrends3RF <- asylumTrends3RF[,-4]
+asylumTrends3RF <- asylumTrends3RF[,-7:-15]
+ATRF3_2 <- randomForest(asylumTrends3RF[,-4], asylumTrends3RF[,4], prox=TRUE)
+ATRF3_2
+importance(ATRF3_2)
+View(asylumTrends3RF)
+```
