@@ -10,7 +10,7 @@ This GutHub repo is dedicated to my Portfolio required for the Applied Data Scie
 
 Paper - Contains my final written paper that outlines my learning objectives over the course of my past 18 months of the program
 
-Presentation - This section has the powerpoint for my portfolio and video presentation
+Presentation - This section has the powerpoint for my portfolio
 
 Projects - This sections contains all 3 projects that are dicussed in my paper and presentation will detaield aspects of each
   IST 623
