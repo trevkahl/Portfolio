@@ -1,8 +1,9 @@
 # Portfolio
-
+Trevor Kahl - tkahl@syr.edu; trev936@gmail.com
+SUID - 345373318
 This GutHub repo is dedicated to my Portfolio required for the Applied Data Science program
 
-Paper - Contains my final written paper that outlines my learning objectives over the course of my past 18 onths of the program
+Paper - Contains my final written paper that outlines my learning objectives over the course of my past 18 months of the program
 
 Presentation - This section has the powerpoint for my portfolio and video presentation
 
