@@ -1,8 +1,6 @@
 # Portfolio
 
-Trevor Kahl - tkahl@syr.edu; trev936@gmail.com
-
-SUID - 345373318
+Trevor Kahl -  trev936@gmail.com
 
 https://www.linkedin.com/in/trevorkahl/
 
