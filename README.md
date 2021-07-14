@@ -4,15 +4,12 @@ Trevor Kahl -  trev936@gmail.com
 
 https://www.linkedin.com/in/trevorkahl/
 
-This GutHub repo is dedicated to my Portfolio required for the Applied Data Science program
+This GutHub repo is dedicated to my Portfolio with projects that were completed during my Applied Data Science program at Syracuse Univiersity
 
-Paper - Contains my final written paper that outlines my learning objectives over the course of my past 18 months of the program
+Projects - This sections contains projects that were completed over my program  will detailed code and papers from each
 
-Presentation - This section has the powerpoint for my portfolio
+IST 623
+  
+IST 652
 
-Projects - This sections contains all 3 projects that are dicussed in my paper and presentation will detaield aspects of each
-  IST 623
-  IST 652
-  IST 707
-
-Resume - Contains two of my professional resumes, one is a single page to hand to an employeer if I were to meet in person. The other is more detailed and used for job applications
+IST 707
