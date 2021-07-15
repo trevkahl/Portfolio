@@ -8,8 +8,8 @@ This GutHub repo is dedicated to my Portfolio with projects that were completed 
 
 Projects - This sections contains projects that were completed over my program  will detailed code and papers from each
 
-IST 623
+Adult Data Analysis (R) 
   
-IST 652
+Refugee Asylum Seekers Analysis (R)
 
-IST 707
+Wine Analysis (Python)
